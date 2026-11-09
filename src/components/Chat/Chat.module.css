@@ -1,0 +1,30 @@
+.chatItem {
+  display: flex;
+  max-height: 100px;
+  height: fit-content;
+  background-color: var(--color-black);
+}
+
+.chatIcon {
+  width: 30px;
+  height: 30px;
+  color: var(--color-white);
+}
+
+.textContainer {
+  display: flex;
+  gap: 10px;
+  background-color: var(--color-black);
+}
+
+.chatName {
+  font-weight: 600;
+  font-size: 24px;
+  color: var(--color-white);
+}
+
+.chatLastMessage {
+  font-weight: 400;
+  font-size: 20px;
+  color: var(--color-white);
+}

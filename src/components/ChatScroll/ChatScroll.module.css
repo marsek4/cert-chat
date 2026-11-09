@@ -1,0 +1,7 @@
+.chatScroll {
+  display: flex;
+  flex: 1;
+  background-color: var(--color-black);
+  margin: 0px 6px 6px 6px;
+  border-radius: 18px;
+}

@@ -1,0 +1,135 @@
+.mainContainer {
+  display: flex;
+  padding: 10px;
+  flex: 1;
+  gap: 10px;
+  background-color: var(--color-black);
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  resize: horizontal;
+  overflow: auto;
+  min-width: 100px;
+  max-width: 60%;
+  width: 270px;
+  margin: auto 0;
+  height: 95svh;
+  border-radius: 18px;
+  background-color: var(--color-green);
+}
+
+.sidebarHeader {
+  display: flex;
+  width: 100%;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+
+  font-weight: 700;
+  font-size: var(--text-lg);
+  color: var(--color-white);
+}
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  margin: auto 0;
+  height: 95svh;
+  flex: 1;
+  border-radius: 18px;
+  border: 1px solid var(--color-grey);
+  background-color: var(--color-black);
+}
+
+.chatHeader {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--color-green);
+  border-radius: 14px;
+  max-height: 54px;
+  padding: 4px 6px;
+  margin: 6px 6px 0px 6px;
+}
+
+.profileInfo {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.profileInfoText {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--color-white);
+}
+
+.chatContainer {
+  display: flex;
+  flex: 1;
+  margin: 0px 6px;
+}
+
+.messageSquare {
+  width: 30px;
+  height: 30px;
+  color: var(--color-white);
+}
+
+.circleUserRound {
+  width: 38px;
+  height: 38px;
+  color: var(--color-white);
+}
+
+.sendHorizontalContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  aspect-ratio: 1/1;
+  border: 1px solid var(--color-grey);
+  border-radius: 14px;
+  background-color: transparent;
+  color: var(--color-white);
+  transition:
+    color 0.3s ease,
+    background-color 0.3s ease;
+}
+
+.sendHorizontal {
+  width: 24px;
+  height: 24px;
+}
+
+.sendHorizontalContainer:hover {
+  background-color: var(--color-green);
+  color: var(--color-black);
+}
+
+.messageInputContainer {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 14px;
+  max-height: 54px;
+  padding: 4px 6px;
+}
+
+.messageInput {
+  width: 100%;
+  height: 100%;
+  padding: 0px 6px;
+  outline: none;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-white);
+  border: 1px solid var(--color-grey);
+  border-radius: 14px;
+}
