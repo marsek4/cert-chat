@@ -2,15 +2,14 @@
   display: flex;
   padding: 10px;
   flex: 1;
-  gap: 10px;
+  gap: 4px;
   background-color: var(--color-black);
 }
 
 .sidebar {
   display: flex;
   flex-direction: column;
-  resize: horizontal;
-  overflow: auto;
+  overflow: hidden;
   min-width: 100px;
   max-width: 60%;
   width: 270px;
@@ -18,6 +17,46 @@
   height: 95svh;
   border-radius: 18px;
   background-color: var(--color-green);
+
+  container-type: inline-size;
+  container-name: sidebar;
+
+  flex-shrink: 0;
+}
+
+.resizer {
+  width: 12px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  height: 95svh;
+  touch-action: none;
+  user-select: none;
+}
+
+.resizer::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 48px;
+  border-radius: 2px;
+  background: var(--color-grey);
+  transition:
+    height 0.2s ease,
+    width 0.2s ease;
+}
+
+.resizer:hover::before,
+.resizer.dragging::before {
+  height: 72px;
+  width: 4px;
 }
 
 .sidebarHeader {
@@ -31,6 +70,17 @@
   font-weight: 700;
   font-size: var(--text-lg);
   color: var(--color-white);
+  white-space: nowrap;
+}
+
+.sidebarHeaderText {
+  transition: opacity 0.2s ease;
+}
+
+@container sidebar (max-width: 200px) {
+  .sidebarHeaderText {
+    display: none;
+  }
 }
 
 .chat {
@@ -96,9 +146,7 @@
   border-radius: 14px;
   background-color: transparent;
   color: var(--color-white);
-  transition:
-    color 0.3s ease,
-    background-color 0.3s ease;
+  transition: color 0.3s ease;
 }
 
 .sendHorizontal {
@@ -107,25 +155,25 @@
 }
 
 .sendHorizontalContainer:hover {
-  background-color: var(--color-green);
-  color: var(--color-black);
+  color: var(--color-green);
 }
 
 .messageInputContainer {
   display: flex;
-  gap: 10px;
+  gap: 6px;
   flex: 1;
   justify-content: space-between;
   align-items: center;
   border-radius: 14px;
   max-height: 54px;
-  padding: 4px 6px;
+  padding: 0px 6px;
+  margin-bottom: 6px;
 }
 
 .messageInput {
   width: 100%;
   height: 100%;
-  padding: 0px 6px;
+  padding: 0px 8px;
   outline: none;
   font-weight: 600;
   font-size: 14px;
