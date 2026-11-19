@@ -1,13 +1,40 @@
 import styles from "./ChatPage.module.css";
 import { useEffect, useRef, useState } from "react";
-import { MessageSquare, CircleUserRound, SendHorizonal } from "lucide-react";
+import { MessageCircle, CircleUserRound, SendHorizonal } from "lucide-react";
 import ChatScroll from "@components/ChatScroll";
+import { createStompClient } from "@/socket-utils/connectws";
+import type { Client, IMessage } from "@stomp/stompjs";
+import { useMe } from "@/rest-queries/hooks";
 
 const MIN_WIDTH = 100;
 const MAX_WIDTH = 800; // максимум в px
 const DEFAULT_WIDTH = 270;
 
 const ChatPage = () => {
+  const { data: me, isLoading: isLoadingMe, isError: isErrorMe } = useMe();
+
+  const clientRef = useRef<Client | null>(null);
+
+  useEffect(() => {
+    if (!me) return;
+
+    console.log("ChatPage mounted");
+
+    const client = createStompClient(
+      (msg: IMessage) => console.log("Получено сообщение:", msg.body),
+      () => console.log("Соединение установлено"),
+      (err: string) => console.error("Ошибка STOMP:", err),
+    );
+
+    clientRef.current = client;
+
+    return () => {
+      console.log(
+        "ChatPage unmounting. НЕ отключаем глобальный клиент, чтобы не рвать соединение при Strict Mode.",
+      );
+    };
+  }, []);
+
   const [messageText, setMessageText] = useState<string>("");
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     if (typeof window === "undefined") return DEFAULT_WIDTH;
@@ -51,12 +78,30 @@ const ChatPage = () => {
     document.body.style.userSelect = "";
   };
 
+  if (isLoadingMe) {
+    return <div>Загрузка...</div>;
+  }
+
+  if (isErrorMe || !me) {
+    return (
+      <div className={styles.error}>
+        Доступ запрещен. Убедитесь, что персональный сертификат сотрудника
+        установлен в системе и не истек.
+      </div>
+    );
+  }
+
   return (
     <div className={styles.mainContainer}>
       <section className={styles.sidebar} style={{ width: sidebarWidth }}>
         <h1 className={styles.sidebarHeader}>
-          <MessageSquare className={styles.messageSquare} />
-          <span className={styles.sidebarHeaderText}>Chats</span>
+          <span
+            className={styles.displayNameContainer}
+          >{`Logged as: ${me.displayName}`}</span>
+          <div className={styles.chatHeaderIcon}>
+            <MessageCircle className={styles.iconStyle} />
+            <span className={styles.sidebarHeaderText}>Chats</span>
+          </div>
         </h1>
         <ChatScroll />
       </section>

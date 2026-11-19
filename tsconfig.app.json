@@ -26,7 +26,9 @@
 
     "paths": {
       "@/*": ["./src/*"],
-      "@components/*": ["./src/components/*"]
+      "@components/*": ["./src/components/*"],
+      "@socket-utils/*": ["./src/socket-utils/*"],
+      "@rest-queries/*": ["./src/rest-queries/*"]
     }
   },
   "include": ["src"]

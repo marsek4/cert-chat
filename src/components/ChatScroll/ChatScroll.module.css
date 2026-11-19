@@ -1,7 +1,54 @@
 .chatScroll {
   display: flex;
+  flex-direction: column;
   flex: 1;
+  gap: 8px;
+  justify-content: flex-start;
   background-color: var(--color-black);
   margin: 0px 6px 6px 6px;
   border-radius: 18px;
+  padding: 4px;
+}
+
+.searchLine {
+  display: flex;
+  justify-content: space-between;
+  background-color: var(--color-grey-dark);
+  height: fit-content;
+  padding: 8px 0px;
+  width: 100%;
+  border-radius: 14px;
+}
+
+.searchInput {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--color-white);
+
+  outline: none;
+  padding: 0px 8px;
+}
+
+.search {
+  margin: 0px 8px;
+  width: 24px;
+  height: 24px;
+  color: var(--color-white);
+}
+
+.searchButton {
+  display: flex;
+  cursor: pointer;
+}
+
+.userChats {
+  display: flex;
+  flex-direction: column;
+}
+
+.infoText {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--color-white);
+  text-align: center;
 }

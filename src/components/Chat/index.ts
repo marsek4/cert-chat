@@ -1,1 +1,1 @@
-export { default } from "./Chat.module.css";
+export { default } from "./Chat";
