@@ -4,11 +4,16 @@
 //   useMutation,
 //   useQueryClient,
 // } from "@tanstack/react-query";
-// import type { MeData, Search, Chats } from "@/rest-queries/types";
+// import type {
+//   MeData,
+//   Search,
+//   Chats,
+//   ChatDetails,
+//   MessagesPage,
+// } from "@/rest-queries/types";
 
 // const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
-// // Единая обертка над fetch с проверкой статуса и credentials
 // async function fetchApi<T>(
 //   endpoint: string,
 //   options?: RequestInit,
@@ -33,7 +38,10 @@
 //   return useQuery<MeData>({
 //     queryKey: ["me"],
 //     queryFn: ({ signal }) => fetchApi<MeData>("/api/v1/users/me", { signal }),
-//     retry: false, // для mTLS-ошибок повторять бессмысленно
+//     retry: false,
+//     staleTime: 0,
+//     gcTime: 0, // не хранить в кэше после размонтирования
+//     refetchOnMount: "always",
 //   });
 // };
 
@@ -44,17 +52,21 @@
 //   });
 // };
 
-// export const useMessages = (chatId: string | null) => {
-//   return useInfiniteQuery({
+// export const useMessages = (chatId: number | null) => {
+//   return useInfiniteQuery<MessagesPage>({
 //     queryKey: ["messages", chatId],
 //     queryFn: ({ pageParam = 0, signal }) =>
-//       fetchApi<any>(
+//       fetchApi<MessagesPage>(
 //         `/api/v1/chats/${chatId}/messages?page=${pageParam}&size=50`,
 //         { signal },
 //       ),
 //     initialPageParam: 0,
 //     getNextPageParam: (lastPage, allPages) => {
-//       // Если бэкенд возвращает объект Spring Page (last: boolean) или hasNext:
+//       // Если бэкенд вернул просто массив Message[]
+//       if (Array.isArray(lastPage)) {
+//         return lastPage.length === 50 ? allPages.length : undefined;
+//       }
+//       // Если бэкенд вернул объект пагинации Spring
 //       if (typeof lastPage.hasNext === "boolean") {
 //         return lastPage.hasNext ? allPages.length : undefined;
 //       }
@@ -63,7 +75,7 @@
 //       }
 //       return undefined;
 //     },
-//     enabled: Boolean(chatId), // не запрашиваем сообщения, пока чат не выбран
+//     enabled: chatId !== null,
 //   });
 // };
 
@@ -79,19 +91,34 @@
 //       });
 //     },
 //     enabled: trimmed.length > 0,
-//     staleTime: 30_000, // кэшируем результаты поиска на 30 секунд
+//     staleTime: 30_000,
 //   });
 // };
 
-// // Мутация для старта личного диалога при клике на найденного сотрудника
 // export const useCreatePrivateChat = () => {
 //   const queryClient = useQueryClient();
 
-//   return useMutation({
-//     mutationFn: (targetUsername: string) =>
-//       fetchApi<any>("/api/v1/chats/private", {
+//   return useMutation<ChatDetails, Error, string>({
+//     mutationFn: (username) =>
+//       fetchApi<ChatDetails>("/api/v1/chats/private", {
 //         method: "POST",
-//         body: JSON.stringify({ username: targetUsername }),
+//         body: JSON.stringify({ recipientUsername: username }),
+//         // body: username,
+//       }),
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: ["chats"] });
+//     },
+//   });
+// };
+
+// export const useCreateGroupChat = () => {
+//   const queryClient = useQueryClient();
+
+//   return useMutation<ChatDetails, Error, { title: string; members: string[] }>({
+//     mutationFn: (payload) =>
+//       fetchApi<ChatDetails>("/api/v1/chats/group", {
+//         method: "POST",
+//         body: JSON.stringify(payload),
 //       }),
 //     onSuccess: () => {
 //       queryClient.invalidateQueries({ queryKey: ["chats"] });
@@ -113,7 +140,9 @@ import type {
   MessagesPage,
 } from "@/rest-queries/types";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+// Браузер ходит на бэкенд напрямую и сам предъявляет ему сертификат
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://10.67.0.73:8443";
 
 async function fetchApi<T>(
   endpoint: string,
