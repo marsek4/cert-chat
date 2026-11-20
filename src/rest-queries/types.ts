@@ -32,7 +32,7 @@ export type ChatDetails = {
 };
 
 // /api/v1/chats/{chatId}/messages
-type Message = {
+export type Message = {
   id: number;
   chatId: number;
   senderUsername: string;

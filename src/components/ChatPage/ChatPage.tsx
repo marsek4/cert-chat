@@ -1,19 +1,60 @@
 import styles from "./ChatPage.module.css";
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, CircleUserRound, SendHorizonal } from "lucide-react";
+import { SquareUserRound, CircleUserRound, SendHorizonal } from "lucide-react";
 import ChatScroll from "@components/ChatScroll";
 import { createStompClient } from "@/socket-utils/connectws";
 import type { Client, IMessage } from "@stomp/stompjs";
 import { useMe } from "@/rest-queries/hooks";
+import { useMessages } from "@rest-queries/hooks";
+import type { Message } from "@rest-queries/types";
+import { useQueryClient } from "@tanstack/react-query";
 
 const MIN_WIDTH = 100;
-const MAX_WIDTH = 800; // максимум в px
+const MAX_WIDTH = 800;
 const DEFAULT_WIDTH = 270;
 
 const ChatPage = () => {
+  const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
+  const [selectedChatTitle, setSelectedChatTitle] = useState<string>("");
+
+  const handleSend = () => {
+    if (!selectedChatId || !messageText.trim() || !clientRef.current) return;
+
+    const payload = {
+      chatId: selectedChatId,
+      content: messageText.trim(),
+      clientMessageId: crypto.randomUUID(),
+    };
+
+    clientRef.current.publish({
+      destination: "/app/chat.send",
+      body: JSON.stringify(payload),
+    });
+
+    setMessageText("");
+  };
+
+  const {
+    data: messages,
+    isLoading: isLoadingMessages,
+    isError: isErrorMessages,
+  } = useMessages(selectedChatId);
+
+  const flatMessages: Message[] =
+    messages?.pages.flatMap((page) => {
+      if (Array.isArray(page)) return page; // если страница — массив
+      return page.content ?? []; // если страница — объект Spring
+    }) ?? [];
+
+  const handleSelectChat = (chatId: number, title: string) => {
+    setSelectedChatId(chatId);
+    setSelectedChatTitle(title);
+  };
+
   const { data: me, isLoading: isLoadingMe, isError: isErrorMe } = useMe();
 
   const clientRef = useRef<Client | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!me) return;
@@ -21,7 +62,11 @@ const ChatPage = () => {
     console.log("ChatPage mounted");
 
     const client = createStompClient(
-      (msg: IMessage) => console.log("Получено сообщение:", msg.body),
+      (msg: IMessage) => {
+        const data = JSON.parse(msg.body);
+        queryClient.invalidateQueries({ queryKey: ["messages", data.chatId] });
+        queryClient.invalidateQueries({ queryKey: ["chats"] });
+      },
       () => console.log("Соединение установлено"),
       (err: string) => console.error("Ошибка STOMP:", err),
     );
@@ -93,17 +138,24 @@ const ChatPage = () => {
 
   return (
     <div className={styles.mainContainer}>
-      <section className={styles.sidebar} style={{ width: sidebarWidth }}>
+      <section
+        className={styles.sidebar}
+        style={{ width: sidebarWidth, minWidth: "240px" }}
+      >
         <h1 className={styles.sidebarHeader}>
-          <span
-            className={styles.displayNameContainer}
-          >{`Logged as: ${me.displayName}`}</span>
+          <span className={styles.displayNameContainer}>
+            <SquareUserRound />
+            {me.displayName}
+          </span>
           <div className={styles.chatHeaderIcon}>
-            <MessageCircle className={styles.iconStyle} />
+            {/* <MessageCircle className={styles.iconStyle} /> */}
             <span className={styles.sidebarHeaderText}>Chats</span>
           </div>
         </h1>
-        <ChatScroll />
+        <ChatScroll
+          selectedChatId={selectedChatId}
+          onSelectChat={handleSelectChat}
+        />
       </section>
 
       <div
@@ -124,11 +176,37 @@ const ChatPage = () => {
         <section className={styles.chatHeader}>
           <span className={styles.profileInfo}>
             <CircleUserRound className={styles.circleUserRound} />
-            <span className={styles.profileInfoText}>Андрюха Пальто</span>
+            <span className={styles.profileInfoText}>
+              {selectedChatTitle || "Chat"}
+            </span>
           </span>
         </section>
         <section className={styles.chatContainer}>
-          <div>message</div>
+          {!selectedChatId && (
+            <div className={styles.infoMessage}>Выберите чат</div>
+          )}
+          {isLoadingMessages && (
+            <div className={styles.infoMessage}>Загрузка сообщений...</div>
+          )}
+          {flatMessages.length === 0 && selectedChatId ? (
+            <div className={styles.infoMessage}>У вас пока нет сообщений</div>
+          ) : (
+            flatMessages.map((msg) => (
+              <div
+                key={msg.id}
+                className={
+                  msg.senderUsername === me?.username
+                    ? styles.myMessage
+                    : styles.otherMessage
+                }
+              >
+                <div>{msg.content}</div>
+                <div className={styles.messageTime}>
+                  {new Date(msg.sentAt).toLocaleTimeString()}
+                </div>
+              </div>
+            ))
+          )}
         </section>
         <section className={styles.messageInputContainer}>
           <input
@@ -137,10 +215,16 @@ const ChatPage = () => {
             placeholder="Type a message"
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
           ></input>
           <button
             type="button"
-            onClick={() => console.log("message send")}
+            onClick={handleSend}
             className={styles.sendHorizontalContainer}
           >
             <SendHorizonal className={styles.sendHorizontal} />

@@ -113,7 +113,7 @@ import type {
   MessagesPage,
 } from "@/rest-queries/types";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+const API_BASE_URL = import.meta.env.API_BASE_URL ?? "";
 
 async function fetchApi<T>(
   endpoint: string,
@@ -140,6 +140,9 @@ export const useMe = () => {
     queryKey: ["me"],
     queryFn: ({ signal }) => fetchApi<MeData>("/api/v1/users/me", { signal }),
     retry: false,
+    staleTime: 0,
+    gcTime: 0, // не хранить в кэше после размонтирования
+    refetchOnMount: "always",
   });
 };
 
@@ -200,7 +203,8 @@ export const useCreatePrivateChat = () => {
     mutationFn: (username) =>
       fetchApi<ChatDetails>("/api/v1/chats/private", {
         method: "POST",
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ recipientUsername: username }),
+        // body: username,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["chats"] });

@@ -1,126 +1,3 @@
-// import styles from "./ChatScroll.module.css";
-// import { Search, X } from "lucide-react";
-// import { useEffect, useState } from "react";
-// import Chat from "@components/Chat";
-// import { useSearch, useChats } from "@rest-queries/hooks";
-
-// const ChatScroll = () => {
-//   const [inputValue, setInputValue] = useState<string>("");
-//   const [debouncedQuery, setDebouncedQuery] = useState<string>("");
-
-//   const {
-//     data: chats,
-//     isLoading: isLoadingChats,
-//     isError: isErrorChats,
-//   } = useChats();
-
-//   const {
-//     data: searchResults,
-//     isLoading: isSearching,
-//     isError: isSearchError,
-//   } = useSearch(debouncedQuery);
-
-//   // Debounce: обновляем debouncedQuery через 350 мс после последнего нажатия клавиши
-//   useEffect(() => {
-//     const trimmed = inputValue.trim();
-
-//     if (!trimmed) {
-//       setDebouncedQuery("");
-//       return;
-//     }
-
-//     const timerId = setTimeout(() => {
-//       setDebouncedQuery(trimmed);
-//     }, 350);
-
-//     return () => clearTimeout(timerId);
-//   }, [inputValue]);
-
-//   const handleSubmit = (e: React.FormEvent) => {
-//     e.preventDefault();
-//     setDebouncedQuery(inputValue.trim());
-//   };
-
-//   const handleClear = () => {
-//     setInputValue("");
-//     setDebouncedQuery("");
-//   };
-
-//   // Режим поиска активен, как только в поле ввели хотя бы один непробельный символ
-//   const isSearchMode = inputValue.trim().length > 0;
-
-//   return (
-//     <div className={styles.chatScroll}>
-//       <form className={styles.searchLine} onSubmit={handleSubmit}>
-//         <input
-//           className={styles.searchInput}
-//           type="text"
-//           placeholder="Search by username..."
-//           value={inputValue}
-//           onChange={(e) => setInputValue(e.target.value)}
-//         />
-//         {isSearchMode ? (
-//           <button
-//             type="button"
-//             onClick={handleClear}
-//             className={styles.searchButton}
-//             aria-label="Очистить поиск"
-//           >
-//             <X className={styles.search} />
-//           </button>
-//         ) : (
-//           <button type="submit" className={styles.searchButton}>
-//             <Search className={styles.search} />
-//           </button>
-//         )}
-//       </form>
-
-//       <section className={styles.userChats}>
-//         {isSearchMode ? (
-//           /* РЕЖИМ ПОИСКА */
-//           <>
-//             {(isSearching || inputValue.trim() !== debouncedQuery) && (
-//               <div>Поиск...</div>
-//             )}
-
-//             {isSearchError && <div>Ошибка при поиске сотрудников</div>}
-
-//             {!isSearching &&
-//               inputValue.trim() === debouncedQuery &&
-//               searchResults?.length === 0 && <div>Ничего не найдено</div>}
-
-//             {searchResults?.map((user) => (
-//               <Chat
-//                 key={user.username}
-//                 name={user.displayName || user.username}
-//                 lastMessage={`@${user.username}`}
-//                 // onClick={() => handleStartChat(user.username)}
-//               />
-//             ))}
-//           </>
-//         ) : (
-//           <>
-//             <Chat name="Saved Messages" lastMessage="flag={karamba}" />
-
-//             {isLoadingChats && <div>Загрузка чатов...</div>}
-//             {isErrorChats && <div>Не удалось загрузить чаты</div>}
-
-//             {chats?.map((chat) => (
-//               <Chat
-//                 key={chat.id}
-//                 name={chat.title}
-//                 lastMessage={chat.lastMessage?.text ?? ""}
-//               />
-//             ))}
-//           </>
-//         )}
-//       </section>
-//     </div>
-//   );
-// };
-
-// export default ChatScroll;
-
 import styles from "./ChatScroll.module.css";
 import { Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -259,7 +136,7 @@ const ChatScroll = ({ selectedChatId, onSelectChat }: ChatScrollProps) => {
         ) : (
           /* ОБЫЧНЫЙ РЕЖИМ */
           <>
-            <Chat name="Saved Messages" lastMessage="flag={karamba}" />
+            {/* <Chat name="Saved Messages" lastMessage="flag={karamba}" /> */}
 
             {isLoadingChats && (
               <div className={styles.infoText}>Загрузка чатов...</div>
@@ -289,3 +166,13 @@ const ChatScroll = ({ selectedChatId, onSelectChat }: ChatScrollProps) => {
 };
 
 export default ChatScroll;
+
+// В терминале выполните команду, чтобы сбросить кэш сокетов на уровне системы (macOS):
+
+// bash
+// sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+// Запустите Chrome с флагом, который отключает кэширование TLS-сессий (только для теста):
+
+// bash
+// open -a "Google Chrome" --args --disable-session-cache
+// Зайдите на сайт.
