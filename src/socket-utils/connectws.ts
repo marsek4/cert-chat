@@ -1,6 +1,6 @@
 import { Client, type IMessage } from "@stomp/stompjs";
 
-const WS_URL = "wss://10.67.0.73:8443/ws";
+const WS_URL = import.meta.env.VITE_WS_BASE_URL ?? "wss://10.67.0.73:8443/ws";
 
 export const createStompClient = (
   onMessage: (msg: IMessage) => void,

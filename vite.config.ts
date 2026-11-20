@@ -1,36 +1,3 @@
-// import react from "@vitejs/plugin-react";
-// import { defineConfig } from "vite";
-// import path from "path";
-// import tailwindcss from "@tailwindcss/vite";
-
-// export default defineConfig({
-//   plugins: [react(), tailwindcss()],
-//   resolve: {
-//     alias: {
-//       "@": path.resolve(__dirname, "/src"),
-//       "@components": path.resolve(__dirname, "/src/components"),
-//     },
-//   },
-//   server: {
-//     port: 5174,
-//     proxy: {
-//       // Проксирование REST API на Nginx (порт 8443)
-//       "/api": {
-//         target: "https://localhost:5173",
-//         changeOrigin: true,
-//         secure: false, // Обязательно: ваш сертификат самоподписанный, пропускаем проверку
-//       },
-//       // Проксирование WebSocket на Nginx
-//       "/ws": {
-//         target: "wss://localhost:5173",
-//         ws: true, // Включаем поддержку WebSocket
-//         changeOrigin: true,
-//         secure: false,
-//       },
-//     },
-//   },
-// });
-
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import path from "path";
