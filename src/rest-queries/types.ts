@@ -16,7 +16,7 @@ type Chat = {
   id: number;
   title: string;
   members: string[];
-  lastMessage: string | null;
+  lastMessage: Message | null;
   unreadCount: number;
 };
 
@@ -27,7 +27,7 @@ export type ChatDetails = {
   type: "PRIVATE" | "GROUP";
   title: string;
   members: UserProfile[];
-  lastMessage: Message | null;
+  lastMessage: Message;
   unreadCount: number;
 };
 

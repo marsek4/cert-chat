@@ -106,7 +106,7 @@ const ChatScroll = ({ selectedChatId, onSelectChat }: ChatScrollProps) => {
           /* РЕЖИМ ПОИСКА */
           <>
             {(isSearching || inputValue.trim() !== debouncedQuery) && (
-              <div>Поиск...</div>
+              <div className={styles.infoText}>Поиск...</div>
             )}
 
             {isSearchError && (
@@ -118,7 +118,7 @@ const ChatScroll = ({ selectedChatId, onSelectChat }: ChatScrollProps) => {
             {!isSearching &&
               inputValue.trim() === debouncedQuery &&
               filteredUsers?.length === 0 && (
-                <div className={styles.infoText}>Ничего не найдено</div>
+                <div className={styles.infoText}>Никого не найдено</div>
               )}
 
             {filteredUsers?.map((user) => (
@@ -128,7 +128,7 @@ const ChatScroll = ({ selectedChatId, onSelectChat }: ChatScrollProps) => {
               >
                 <Chat
                   name={user.displayName || user.username}
-                  lastMessage={`@${user.username}`}
+                  lastMessage={`@${user.displayName}`}
                 />
               </div>
             ))}
@@ -136,8 +136,6 @@ const ChatScroll = ({ selectedChatId, onSelectChat }: ChatScrollProps) => {
         ) : (
           /* ОБЫЧНЫЙ РЕЖИМ */
           <>
-            {/* <Chat name="Saved Messages" lastMessage="flag={karamba}" /> */}
-
             {isLoadingChats && (
               <div className={styles.infoText}>Загрузка чатов...</div>
             )}
@@ -152,7 +150,13 @@ const ChatScroll = ({ selectedChatId, onSelectChat }: ChatScrollProps) => {
               >
                 <Chat
                   name={chat.title}
-                  lastMessage={chat.lastMessage ?? ""}
+                  lastMessage={
+                    chat.lastMessage
+                      ? chat.lastMessage.senderUsername === me?.username
+                        ? `You: ${chat.lastMessage.content}`
+                        : chat.lastMessage.content
+                      : "Write a message..."
+                  }
                   unreadCount={chat.unreadCount}
                   isActive={chat.id === selectedChatId}
                 />
@@ -166,13 +170,3 @@ const ChatScroll = ({ selectedChatId, onSelectChat }: ChatScrollProps) => {
 };
 
 export default ChatScroll;
-
-// В терминале выполните команду, чтобы сбросить кэш сокетов на уровне системы (macOS):
-
-// bash
-// sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
-// Запустите Chrome с флагом, который отключает кэширование TLS-сессий (только для теста):
-
-// bash
-// open -a "Google Chrome" --args --disable-session-cache
-// Зайдите на сайт.

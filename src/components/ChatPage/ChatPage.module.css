@@ -87,9 +87,11 @@
 .chat {
   display: flex;
   flex-direction: column;
+  gap: 10px;
   margin: auto 0;
   height: 95svh;
   flex: 1;
+  min-height: 0;
   border-radius: 18px;
   border: 1px solid var(--color-grey);
   background-color: var(--color-black);
@@ -138,14 +140,6 @@
   font-weight: 600;
   font-size: 16px;
   color: var(--color-white);
-}
-
-.chatContainer {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  margin: 0px 6px;
 }
 
 .iconStyle {
@@ -210,4 +204,47 @@
   font-weight: 500;
   font-size: 16px;
   color: var(--color-grey);
+}
+
+.chatContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* justify-content: flex-end; */
+  flex: 1;
+  min-height: 0; /* ← ключевое: разрешает сжатие во flex */
+  overflow-y: auto; /* ← скролл */
+  overflow-x: hidden;
+  margin: 0px 6px;
+  /* background-color: brown; */
+}
+
+.myMessage {
+  align-self: self-end;
+  font-size: 12px;
+  font-weight: 500;
+
+  border-radius: 12px;
+  padding: 10px 6px;
+  margin: 4px 0px;
+  background-color: var(--color-green);
+  color: var(--color-white);
+}
+
+.otherMessage {
+  align-self: self-start;
+  font-size: 12px;
+  font-weight: 500;
+
+  border-radius: 12px;
+  padding: 10px 6px;
+  margin: 4px 0px;
+  background-color: var(--color-grey-dark);
+  color: var(--color-white);
+}
+
+.messageTime {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--color-white);
 }

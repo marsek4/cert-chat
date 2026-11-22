@@ -8,14 +8,18 @@ export type ChatProps = {
   isActive?: boolean;
 };
 
-const Chat = ({ name, lastMessage }: ChatProps) => {
+const Chat = ({ name, lastMessage, unreadCount, isActive }: ChatProps) => {
   return (
-    <div className={styles.chatItem}>
+    // <div className={styles.chatItem}>
+    <div className={`${styles.chatItem} ${isActive ? styles.active : ""}`}>
       <Users className={styles.chatIcon} />
       <div className={styles.textContainer}>
         <p className={styles.chatName}>{name}</p>
         <p className={styles.chatLastMessage}>{lastMessage}</p>
       </div>
+      {unreadCount !== 0 && (
+        <p className={styles.unreadCountNumber}>{unreadCount}</p>
+      )}
     </div>
   );
 };
