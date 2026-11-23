@@ -10,7 +10,6 @@ export type ChatProps = {
 
 const Chat = ({ name, lastMessage, unreadCount, isActive }: ChatProps) => {
   return (
-    // <div className={styles.chatItem}>
     <div className={`${styles.chatItem} ${isActive ? styles.active : ""}`}>
       <Users className={styles.chatIcon} />
       <div className={styles.textContainer}>

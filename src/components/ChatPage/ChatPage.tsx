@@ -1,5 +1,5 @@
 import styles from "./ChatPage.module.css";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { SquareUserRound, CircleUserRound, SendHorizonal } from "lucide-react";
 import ChatScroll from "@components/ChatScroll";
 import { createStompClient } from "@/socket-utils/connectws";
@@ -16,6 +16,20 @@ const DEFAULT_WIDTH = 270;
 const ChatPage = () => {
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
   const [selectedChatTitle, setSelectedChatTitle] = useState<string>("");
+
+  // кто печатает в каждом чате: chatId -> Set<username>
+  const [typingUsers, setTypingUsers] = useState<Record<number, Set<string>>>(
+    {},
+  );
+
+  // таймер отправки TYPING_STOP (пока я печатаю)
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTypingRef = useRef(false);
+
+  // таймеры автосброса «печатает» у собеседника (если TYPING_STOP потерялся)
+  const remoteTypingTimeoutsRef = useRef<
+    Record<string, ReturnType<typeof setTimeout>>
+  >({});
 
   const {
     data: messages,
@@ -34,6 +48,47 @@ const ChatPage = () => {
   // а id последнего — нет, поэтому скролл вниз не сработает.
   const lastMessageId = flatMessages[flatMessages.length - 1]?.id ?? null;
 
+  const markAsRead = useCallback(
+    (chatId: number, messageId: number, actorUsername: string) => {
+      if (!clientRef.current) return;
+      clientRef.current.publish({
+        destination: "/app/chat.read",
+        body: JSON.stringify({
+          type: "MESSAGES_READ",
+          chatId,
+          actorUsername,
+          messageId,
+        }),
+      });
+    },
+    [],
+  );
+
+  const handleSelectChat = (chatId: number, title: string) => {
+    setSelectedChatId(chatId);
+    setSelectedChatTitle(title);
+    lastReadIdRef.current = 0; // новый чат — начинаем заново
+  };
+
+  const { data: me, isLoading: isLoadingMe, isError: isErrorMe } = useMe();
+
+  const clientRef = useRef<Client | null>(null);
+  const lastReadIdRef = useRef<number>(0);
+  const queryClient = useQueryClient();
+
+  const sendTyping = (typing: boolean) => {
+    if (!selectedChatId || !clientRef.current || !me?.username) return;
+    clientRef.current.publish({
+      destination: "/app/chat.typing",
+      body: JSON.stringify({
+        type: typing ? "TYPING_START" : "TYPING_STOP",
+        chatId: selectedChatId,
+        actorUsername: me.username,
+        messageId: null,
+      }),
+    });
+  };
+
   const handleSend = () => {
     if (!selectedChatId || !messageText.trim() || !clientRef.current) return;
 
@@ -49,17 +104,26 @@ const ChatPage = () => {
     });
 
     setMessageText("");
+
+    isTypingRef.current = false;
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    sendTyping(false);
   };
 
-  const handleSelectChat = (chatId: number, title: string) => {
-    setSelectedChatId(chatId);
-    setSelectedChatTitle(title);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessageText(e.target.value);
+
+    if (!isTypingRef.current) {
+      isTypingRef.current = true;
+      sendTyping(true);
+    }
+
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      isTypingRef.current = false;
+      sendTyping(false);
+    }, 2000);
   };
-
-  const { data: me, isLoading: isLoadingMe, isError: isErrorMe } = useMe();
-
-  const clientRef = useRef<Client | null>(null);
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!me) return;
@@ -69,6 +133,52 @@ const ChatPage = () => {
     const client = createStompClient(
       (msg: IMessage) => {
         const data = JSON.parse(msg.body);
+
+        if (data.type === "TYPING_START" || data.type === "TYPING_STOP") {
+          const { chatId, actorUsername, type } = data;
+
+          // игнорируем собственные события (если сервер шлёт и отправителю)
+          if (actorUsername === me?.username) return;
+
+          setTypingUsers((prev) => {
+            const next = { ...prev };
+            const set = new Set(next[chatId] ?? []);
+            if (type === "TYPING_START") set.add(actorUsername);
+            else set.delete(actorUsername);
+            next[chatId] = set;
+            return next;
+          });
+
+          // автосброс через 5 с, если TYPING_STOP не пришёл
+          const key = `${chatId}:${actorUsername}`;
+          if (remoteTypingTimeoutsRef.current[key]) {
+            clearTimeout(remoteTypingTimeoutsRef.current[key]);
+          }
+          if (type === "TYPING_START") {
+            remoteTypingTimeoutsRef.current[key] = setTimeout(() => {
+              setTypingUsers((prev) => {
+                const next = { ...prev };
+                const set = new Set(next[chatId] ?? []);
+                set.delete(actorUsername);
+                next[chatId] = set;
+                return next;
+              });
+            }, 5000);
+          }
+          return;
+        }
+
+        if (data.type === "MESSAGES_READ") {
+          // кто-то прочитал — обновляем список чатов (unreadCount)
+          // и сообщения (статус «прочитано», если отображаете)
+          queryClient.invalidateQueries({ queryKey: ["chats"] });
+          queryClient.invalidateQueries({
+            queryKey: ["messages", data.chatId],
+          });
+          return;
+        }
+
+        // обычное новое сообщение
         queryClient.invalidateQueries({ queryKey: ["messages", data.chatId] });
         queryClient.invalidateQueries({ queryKey: ["chats"] });
       },
@@ -86,6 +196,21 @@ const ChatPage = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.username]);
+
+  useEffect(() => {
+    // при смене чата сбрасываем таймер отправки STOP
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      isTypingRef.current = false;
+    };
+  }, [selectedChatId]);
+
+  // очистка таймеров автосброса при размонтировании
+  useEffect(() => {
+    return () => {
+      Object.values(remoteTypingTimeoutsRef.current).forEach(clearTimeout);
+    };
+  }, []);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true);
@@ -121,6 +246,25 @@ const ChatPage = () => {
       el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
     }
   }, [lastMessageId, selectedChatId]);
+
+  useEffect(() => {
+    if (!selectedChatId || !me?.username) return;
+
+    const last = flatMessages[flatMessages.length - 1];
+    if (!last) return;
+
+    // своё сообщение не отмечаем
+    if (last.senderUsername === me.username) return;
+
+    // пользователь не внизу — не считается прочитанным
+    if (!isAtBottomRef.current) return;
+
+    // уже отправляли этот id — не спамим
+    if (last.id <= lastReadIdRef.current) return;
+
+    lastReadIdRef.current = last.id;
+    markAsRead(selectedChatId, last.id, me.username);
+  }, [selectedChatId, lastMessageId, me?.username, markAsRead, flatMessages]);
 
   const [messageText, setMessageText] = useState<string>("");
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
@@ -177,6 +321,12 @@ const ChatPage = () => {
     );
   }
 
+  const typingSet = selectedChatId ? typingUsers[selectedChatId] : undefined;
+  const typingLabel =
+    typingSet && typingSet.size > 0
+      ? `${[...typingSet].join(", ")} печатает…`
+      : null;
+
   return (
     <div className={styles.mainContainer}>
       <section
@@ -216,8 +366,13 @@ const ChatPage = () => {
         <section className={styles.chatHeader}>
           <span className={styles.profileInfo}>
             <CircleUserRound className={styles.circleUserRound} />
-            <span className={styles.profileInfoText}>
-              {selectedChatTitle || "Chat"}
+            <span className={styles.profileTextBlock}>
+              <span className={styles.profileInfoText}>
+                {selectedChatTitle || "Chat"}
+              </span>
+              {typingLabel && (
+                <span className={styles.typingStatus}>{typingLabel}</span>
+              )}
             </span>
           </span>
         </section>
@@ -258,7 +413,7 @@ const ChatPage = () => {
             type="text"
             placeholder="Type a message"
             value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
