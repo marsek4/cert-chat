@@ -384,6 +384,9 @@ const ChatPage = () => {
           {!selectedChatId && (
             <div className={styles.infoMessage}>Выберите чат</div>
           )}
+          {isErrorMessages && (
+            <div className={styles.infoMessage}>Ошибка при загрузке чата</div>
+          )}
           {isLoadingMessages && (
             <div className={styles.infoMessage}>Загрузка сообщений...</div>
           )}

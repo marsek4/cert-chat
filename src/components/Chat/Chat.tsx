@@ -1,5 +1,5 @@
 import styles from "./Chat.module.css";
-import { Users, UserGroup } from "lucide-react";
+import { Users } from "lucide-react";
 
 export type ChatProps = {
   name: string;

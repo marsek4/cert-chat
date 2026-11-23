@@ -1,5 +1,4 @@
 import { Routes, Route } from "react-router-dom";
-import StartPage from "@components/StartPage";
 import ChatPage from "@components/ChatPage";
 
 const App = () => {
