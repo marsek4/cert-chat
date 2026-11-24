@@ -1,7 +1,11 @@
 import { Client, type IMessage } from "@stomp/stompjs";
 
 // Браузер подключается к WebSocket бэкенда напрямую
-const serverName = import.meta.env.VITE_SERVER_NAME || window.location.hostname;
+const serverName =
+  import.meta.env.VITE_SERVER_NAME &&
+  import.meta.env.VITE_SERVER_NAME !== "localhost"
+    ? import.meta.env.VITE_SERVER_NAME
+    : window.location.hostname;
 
 export const WS_BASE_URL = `wss://${serverName}:8443/ws`;
 

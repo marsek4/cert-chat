@@ -13,7 +13,11 @@ import type {
 } from "@/rest-queries/types";
 
 // Браузер ходит на бэкенд напрямую и сам предъявляет ему сертификат
-const serverName = import.meta.env.VITE_SERVER_NAME || window.location.hostname;
+const serverName =
+  import.meta.env.VITE_SERVER_NAME &&
+  import.meta.env.VITE_SERVER_NAME !== "localhost"
+    ? import.meta.env.VITE_SERVER_NAME
+    : window.location.hostname;
 
 export const API_BASE_URL = `https://${serverName}:8443`;
 
