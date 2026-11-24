@@ -12,10 +12,17 @@ export type UserProfile = {
 };
 
 // /api/v1/chats
+
+export type Member = {
+  username: string;
+  displayName: string;
+  lastSeenAt: string;
+};
+
 type Chat = {
   id: number;
   title: string;
-  members: string[];
+  members: Member[];
   lastMessage: Message | null;
   unreadCount: number;
 };
@@ -55,10 +62,5 @@ export type MessagesPage =
   | Message[];
 
 // /api/v1/users/search
-type Member = {
-  username: string;
-  displayName: string;
-  lastSeenAt: string;
-};
 
 export type Search = Member[];

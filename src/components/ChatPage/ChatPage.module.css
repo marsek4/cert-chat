@@ -145,7 +145,7 @@
 .typingStatus {
   font-size: 12px;
   font-weight: 500;
-  color: var(--color-grey);
+  color: var(--color-white);
   font-style: italic;
   animation: typingPulse 1.2s ease-in-out infinite;
 }
@@ -234,13 +234,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* justify-content: flex-end; */
   flex: 1;
-  min-height: 0; /* ← ключевое: разрешает сжатие во flex */
-  overflow-y: auto; /* ← скролл */
+  min-height: 0;
+  overflow-y: auto;
   overflow-x: hidden;
   margin: 0px 6px;
-  /* background-color: brown; */
+  border-radius: 14px;
+  border: 1px solid var(--color-grey);
 }
 
 .myMessage {
@@ -250,7 +250,7 @@
 
   border-radius: 12px;
   padding: 10px 6px;
-  margin: 4px 0px;
+  margin: 4px 6px;
   background-color: var(--color-green);
   color: var(--color-white);
 }
@@ -262,7 +262,7 @@
 
   border-radius: 12px;
   padding: 10px 6px;
-  margin: 4px 0px;
+  margin: 4px 6px;
   background-color: var(--color-grey-dark);
   color: var(--color-white);
 }
@@ -270,5 +270,19 @@
 .messageTime {
   font-size: 10px;
   font-weight: 400;
+  color: var(--color-white);
+}
+
+.error {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-black);
+}
+
+.errorMessage {
+  font-size: 16px;
+  font-weight: 500;
   color: var(--color-white);
 }

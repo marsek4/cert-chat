@@ -1,29 +1,30 @@
 import styles from "./ChatScroll.module.css";
 import { Search, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Chat from "@components/Chat";
-import {
-  useSearch,
-  useChats,
-  useCreatePrivateChat,
-  useMe,
-} from "@rest-queries/hooks";
+import { useSearch, useCreatePrivateChat, useMe } from "@rest-queries/hooks";
+import { Flipper, Flipped } from "react-flip-toolkit";
+import type { Chats } from "@rest-queries/types";
 
 type ChatScrollProps = {
+  chats: Chats;
+  isLoadingChats: boolean;
+  isErrorChats: boolean;
   selectedChatId?: number | null;
   onSelectChat?: (chatId: number, title: string) => void;
 };
 
-const ChatScroll = ({ selectedChatId, onSelectChat }: ChatScrollProps) => {
+const ChatScroll = ({
+  chats,
+  isLoadingChats,
+  isErrorChats,
+  selectedChatId,
+  onSelectChat,
+}: ChatScrollProps) => {
   const [inputValue, setInputValue] = useState<string>("");
   const [debouncedQuery, setDebouncedQuery] = useState<string>("");
 
   const { data: me } = useMe();
-  const {
-    data: chats,
-    isLoading: isLoadingChats,
-    isError: isErrorChats,
-  } = useChats();
 
   const {
     data: searchResults,
@@ -68,12 +69,20 @@ const ChatScroll = ({ selectedChatId, onSelectChat }: ChatScrollProps) => {
     });
   };
 
+  // const handleLastSeen = (arr: Member[]) => {
+  //   if (arr.length === 2) {
+  //     return arr.find((member) => member.username !== me?.username)?.lastSeenAt;
+  //   }
+  // };
+
   const isSearchMode = inputValue.trim().length > 0;
 
   // Исключаем текущего пользователя из результатов поиска
   const filteredUsers = searchResults?.filter(
     (user) => user.username !== me?.username,
   );
+
+  const flipKey = useMemo(() => JSON.stringify(chats), [chats]);
 
   return (
     <div className={styles.chatScroll}>
@@ -90,7 +99,7 @@ const ChatScroll = ({ selectedChatId, onSelectChat }: ChatScrollProps) => {
             type="button"
             onClick={handleClear}
             className={styles.searchButton}
-            aria-label="Очистить поиск"
+            aria-label="Clear search"
           >
             <X className={styles.search} />
           </button>
@@ -100,71 +109,72 @@ const ChatScroll = ({ selectedChatId, onSelectChat }: ChatScrollProps) => {
           </button>
         )}
       </form>
-
-      <section className={styles.userChats}>
-        {isSearchMode ? (
-          /* РЕЖИМ ПОИСКА */
-          <>
-            {(isSearching || inputValue.trim() !== debouncedQuery) && (
-              <div className={styles.infoText}>Поиск...</div>
-            )}
-
-            {isSearchError && (
-              <div className={styles.infoText}>
-                Ошибка при поиске сотрудников
-              </div>
-            )}
-
-            {!isSearching &&
-              inputValue.trim() === debouncedQuery &&
-              filteredUsers?.length === 0 && (
-                <div className={styles.infoText}>Никого не найдено</div>
+      <Flipper flipKey={flipKey} spring="stiff">
+        <section className={styles.userChats}>
+          {isSearchMode ? (
+            /* РЕЖИМ ПОИСКА */
+            <>
+              {(isSearching || inputValue.trim() !== debouncedQuery) && (
+                <div className={styles.infoText}>Searching...</div>
               )}
 
-            {filteredUsers?.map((user) => (
-              <div
-                key={user.username}
-                onClick={() => handleStartChat(user.username)}
-              >
-                <Chat
-                  name={user.displayName || user.username}
-                  lastMessage={`@${user.displayName}`}
-                />
-              </div>
-            ))}
-          </>
-        ) : (
-          /* ОБЫЧНЫЙ РЕЖИМ */
-          <>
-            {isLoadingChats && (
-              <div className={styles.infoText}>Загрузка чатов...</div>
-            )}
-            {isErrorChats && (
-              <div className={styles.infoText}>Не удалось загрузить чаты</div>
-            )}
+              {isSearchError && (
+                <div className={styles.infoText}>
+                  Ошибка при поиске сотрудников
+                </div>
+              )}
 
-            {chats?.map((chat) => (
-              <div
-                key={chat.id}
-                onClick={() => onSelectChat?.(chat.id, chat.title)}
-              >
-                <Chat
-                  name={chat.title}
-                  lastMessage={
-                    chat.lastMessage
-                      ? chat.lastMessage.senderUsername === me?.username
-                        ? `You: ${chat.lastMessage.content}`
-                        : chat.lastMessage.content
-                      : "Write a message..."
-                  }
-                  unreadCount={chat.unreadCount}
-                  isActive={chat.id === selectedChatId}
-                />
-              </div>
-            ))}
-          </>
-        )}
-      </section>
+              {!isSearching &&
+                inputValue.trim() === debouncedQuery &&
+                filteredUsers?.length === 0 && (
+                  <div className={styles.infoText}>Никого не найдено</div>
+                )}
+
+              {filteredUsers?.map((user) => (
+                <Flipped key={user.username} flipId={`user-${user.username}`}>
+                  <div onClick={() => handleStartChat(user.username)}>
+                    <Chat
+                      name={user.displayName || user.username}
+                      lastMessage={`@${user.displayName}`}
+                      // lastSeenAt={user.lastSeenAt}
+                    />
+                  </div>
+                </Flipped>
+              ))}
+            </>
+          ) : (
+            /* ОБЫЧНЫЙ РЕЖИМ */
+            <>
+              {isLoadingChats && (
+                <div className={styles.infoText}>Загрузка чатов...</div>
+              )}
+              {isErrorChats && (
+                <div className={styles.infoText}>Не удалось загрузить чаты</div>
+              )}
+
+              {chats?.map((chat) => (
+                <Flipped key={chat.id} flipId={`chat-${chat.id}`}>
+                  <div onClick={() => onSelectChat?.(chat.id, chat.title)}>
+                    <Chat
+                      name={chat.title}
+                      lastMessage={
+                        chat.lastMessage
+                          ? chat.lastMessage.senderUsername === me?.username
+                            ? `You: ${chat.lastMessage.content}`
+                            : chat.lastMessage.content
+                          : "Write a message..."
+                      }
+                      unreadCount={chat.unreadCount}
+                      isActive={chat.id === selectedChatId}
+                      // lastSeenAt={handleLastSeen(chat.members) || "Group chat"}
+                    />
+                  </div>
+                </Flipped>
+              ))}
+            </>
+          )}
+        </section>
+      </Flipper>
     </div>
   );
 };

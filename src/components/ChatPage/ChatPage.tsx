@@ -6,14 +6,21 @@ import { createStompClient } from "@/socket-utils/connectws";
 import type { Client, IMessage } from "@stomp/stompjs";
 import { useMe } from "@/rest-queries/hooks";
 import { useMessages } from "@rest-queries/hooks";
-import type { Message } from "@rest-queries/types";
+import type { Chats, Message } from "@rest-queries/types";
 import { useQueryClient } from "@tanstack/react-query";
+import { useChats } from "@rest-queries/hooks";
 
 const MIN_WIDTH = 100;
 const MAX_WIDTH = 800;
 const DEFAULT_WIDTH = 270;
 
 const ChatPage = () => {
+  const {
+    data: chats,
+    isLoading: isLoadingChats,
+    isError: isErrorChats,
+  } = useChats();
+
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
   const [selectedChatTitle, setSelectedChatTitle] = useState<string>("");
 
@@ -309,23 +316,58 @@ const ChatPage = () => {
   };
 
   if (isLoadingMe) {
-    return <div>Загрузка...</div>;
+    <div className={styles.error}>
+      <p className={styles.errorMessage}>Loading...</p>
+    </div>;
   }
 
   if (isErrorMe || !me) {
     return (
       <div className={styles.error}>
-        Доступ запрещен. Убедитесь, что персональный сертификат сотрудника
-        установлен в системе и не истек.
+        <p className={styles.errorMessage}>
+          Access denied. Ensure that the employee's personal certificate is
+          installed on the system and has not expired.
+        </p>
       </div>
     );
   }
 
-  const typingSet = selectedChatId ? typingUsers[selectedChatId] : undefined;
-  const typingLabel =
-    typingSet && typingSet.size > 0
-      ? `${[...typingSet].join(", ")} печатает…`
-      : null;
+  const currentTypingUsers = selectedChatId
+    ? Array.from(typingUsers[selectedChatId] ?? [])
+    : [];
+
+  const typingStatusText =
+    currentTypingUsers.length === 0
+      ? ""
+      : currentTypingUsers.length === 1
+        ? `${currentTypingUsers[0]} is typing...`
+        : `${currentTypingUsers.join(", ")} are typing...`;
+
+  const handleLastSeenAt = (arr: Chats) => {
+    const members = arr.find((chat) => chat.id === selectedChatId)?.members;
+    const otherMember = members?.find(
+      (member) => member.username !== me.username,
+    );
+    return otherMember?.lastSeenAt;
+  };
+
+  const formatMessageDate = (isoString: string): string => {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return "";
+
+    // Получаем день, месяц и время
+    const day = date.getDate();
+
+    // toLocaleString с 'en-US' даст "Nov", приводим к нижнему регистру
+    const month = date
+      .toLocaleString("en-US", { month: "short" })
+      .toLowerCase();
+
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    return `${day} ${month} ${hours}:${minutes}`;
+  };
 
   return (
     <div className={styles.mainContainer}>
@@ -339,10 +381,13 @@ const ChatPage = () => {
             {me.displayName}
           </span>
           <div className={styles.chatHeaderIcon}>
-            <span className={styles.sidebarHeaderText}>Chats</span>
+            <span className={styles.sidebarHeaderText}>Chatter</span>
           </div>
         </h1>
         <ChatScroll
+          chats={chats || []}
+          isLoadingChats={isLoadingChats}
+          isErrorChats={isErrorChats}
           selectedChatId={selectedChatId}
           onSelectChat={handleSelectChat}
         />
@@ -370,8 +415,14 @@ const ChatPage = () => {
               <span className={styles.profileInfoText}>
                 {selectedChatTitle || "Chat"}
               </span>
-              {typingLabel && (
-                <span className={styles.typingStatus}>{typingLabel}</span>
+              {typingStatusText ? (
+                <span className={styles.typingStatus}>{typingStatusText}</span>
+              ) : selectedChatTitle !== "Избранное" ? (
+                <span className={styles.infoMessage}>
+                  {`Last seen: ${formatMessageDate(handleLastSeenAt(chats ?? []) ?? "")}`}
+                </span>
+              ) : (
+                <></>
               )}
             </span>
           </span>
@@ -382,16 +433,18 @@ const ChatPage = () => {
           onScroll={handleScroll}
         >
           {!selectedChatId && (
-            <div className={styles.infoMessage}>Выберите чат</div>
+            <div className={styles.infoMessage}>Choose a chat</div>
           )}
           {isErrorMessages && (
-            <div className={styles.infoMessage}>Ошибка при загрузке чата</div>
+            <div className={styles.infoMessage}>Error loading chat</div>
           )}
           {isLoadingMessages && (
-            <div className={styles.infoMessage}>Загрузка сообщений...</div>
+            <div className={styles.infoMessage}>Loading messages...</div>
           )}
-          {flatMessages.length === 0 && selectedChatId ? (
-            <div className={styles.infoMessage}>У вас пока нет сообщений</div>
+          {flatMessages.length === 0 &&
+          isLoadingMessages === false &&
+          selectedChatId ? (
+            <div className={styles.infoMessage}>No messages yet</div>
           ) : (
             flatMessages.map((msg) => (
               <div
