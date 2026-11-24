@@ -13,8 +13,9 @@ import type {
 } from "@/rest-queries/types";
 
 // Браузер ходит на бэкенд напрямую и сам предъявляет ему сертификат
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://10.67.0.73:8443";
+const serverName = import.meta.env.VITE_SERVER_NAME || window.location.hostname;
+
+export const API_BASE_URL = `https://${serverName}:8443`;
 
 async function fetchApi<T>(
   endpoint: string,

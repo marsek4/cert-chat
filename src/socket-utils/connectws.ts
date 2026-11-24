@@ -1,16 +1,18 @@
 import { Client, type IMessage } from "@stomp/stompjs";
 
 // Браузер подключается к WebSocket бэкенда напрямую
-const WS_URL = import.meta.env.VITE_WS_BASE_URL || "wss://10.67.0.73:8443/ws";
+const serverName = import.meta.env.VITE_SERVER_NAME || window.location.hostname;
+
+export const WS_BASE_URL = `wss://${serverName}:8443/ws`;
 
 export const createStompClient = (
   onMessage: (msg: IMessage) => void,
   onConnect: () => void,
   onError: (err: string) => void,
 ) => {
-  console.log("ws-url: ", WS_URL);
+  console.log("ws-url: ", WS_BASE_URL);
   const client = new Client({
-    webSocketFactory: () => new WebSocket(WS_URL),
+    webSocketFactory: () => new WebSocket(WS_BASE_URL),
     reconnectDelay: 4000,
     debug: (str) => console.log(str),
     onConnect: () => {

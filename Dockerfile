@@ -1,5 +1,9 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
+
+ARG SERVER_NAME=localhost
+ENV VITE_SERVER_NAME=$SERVER_NAME
+
 COPY package*.json ./
 RUN npm ci
 COPY . .
