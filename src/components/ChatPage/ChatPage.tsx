@@ -70,12 +70,7 @@ const ChatPage = () => {
     lastReadIdRef.current = 0;
   };
 
-  const {
-    data: me,
-    isLoading: isLoadingMe,
-    isPending: isPendingMe,
-    isError: isErrorMe,
-  } = useMe();
+  const { data: me, isLoading: isLoadingMe, isError: isErrorMe } = useMe();
 
   const clientRef = useRef<Client | null>(null);
   const lastReadIdRef = useRef<number>(0);
@@ -397,7 +392,7 @@ const ChatPage = () => {
                 <span className={styles.typingStatus}>{typingStatusText}</span>
               ) : selectedChatTitle !== "Избранное" &&
                 selectedChatId !== null ? (
-                <span className={styles.infoMessage}>
+                <span className={styles.lastSeenInfo}>
                   {`Last seen: ${formatMessageDate(handleLastSeenAt(chats ?? []) ?? "")}`}
                 </span>
               ) : (
