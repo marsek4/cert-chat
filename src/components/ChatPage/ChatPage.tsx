@@ -24,16 +24,13 @@ const ChatPage = () => {
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
   const [selectedChatTitle, setSelectedChatTitle] = useState<string>("");
 
-  // кто печатает в каждом чате: chatId -> Set<username>
   const [typingUsers, setTypingUsers] = useState<Record<number, Set<string>>>(
     {},
   );
 
-  // таймер отправки TYPING_STOP (пока я печатаю)
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
 
-  // таймеры автосброса «печатает» у собеседника (если TYPING_STOP потерялся)
   const remoteTypingTimeoutsRef = useRef<
     Record<string, ReturnType<typeof setTimeout>>
   >({});
@@ -46,13 +43,9 @@ const ChatPage = () => {
 
   const flatMessages: Message[] =
     messages?.pages.flatMap((page) => {
-      if (Array.isArray(page)) return page; // если страница — массив
-      return page.content ?? []; // если страница — объект Spring
+      if (Array.isArray(page)) return page;
+      return page.content ?? [];
     }) ?? [];
-
-  // Триггер автоскролла — id последнего сообщения, а не длина.
-  // При подгрузке старых сообщений (пагинация вверх) длина меняется,
-  // а id последнего — нет, поэтому скролл вниз не сработает.
   const lastMessageId = flatMessages[flatMessages.length - 1]?.id ?? null;
 
   const markAsRead = useCallback(
@@ -74,10 +67,15 @@ const ChatPage = () => {
   const handleSelectChat = (chatId: number, title: string) => {
     setSelectedChatId(chatId);
     setSelectedChatTitle(title);
-    lastReadIdRef.current = 0; // новый чат — начинаем заново
+    lastReadIdRef.current = 0;
   };
 
-  const { data: me, isLoading: isLoadingMe, isError: isErrorMe } = useMe();
+  const {
+    data: me,
+    isLoading: isLoadingMe,
+    isPending: isPendingMe,
+    isError: isErrorMe,
+  } = useMe();
 
   const clientRef = useRef<Client | null>(null);
   const lastReadIdRef = useRef<number>(0);
@@ -135,8 +133,6 @@ const ChatPage = () => {
   useEffect(() => {
     if (!me) return;
 
-    console.log("ChatPage mounted");
-
     const client = createStompClient(
       (msg: IMessage) => {
         const data = JSON.parse(msg.body);
@@ -144,7 +140,6 @@ const ChatPage = () => {
         if (data.type === "TYPING_START" || data.type === "TYPING_STOP") {
           const { chatId, actorUsername, type } = data;
 
-          // игнорируем собственные события (если сервер шлёт и отправителю)
           if (actorUsername === me?.username) return;
 
           setTypingUsers((prev) => {
@@ -156,7 +151,6 @@ const ChatPage = () => {
             return next;
           });
 
-          // автосброс через 5 с, если TYPING_STOP не пришёл
           const key = `${chatId}:${actorUsername}`;
           if (remoteTypingTimeoutsRef.current[key]) {
             clearTimeout(remoteTypingTimeoutsRef.current[key]);
@@ -176,8 +170,6 @@ const ChatPage = () => {
         }
 
         if (data.type === "MESSAGES_READ") {
-          // кто-то прочитал — обновляем список чатов (unreadCount)
-          // и сообщения (статус «прочитано», если отображаете)
           queryClient.invalidateQueries({ queryKey: ["chats"] });
           queryClient.invalidateQueries({
             queryKey: ["messages", data.chatId],
@@ -185,7 +177,6 @@ const ChatPage = () => {
           return;
         }
 
-        // обычное новое сообщение
         queryClient.invalidateQueries({ queryKey: ["messages", data.chatId] });
         queryClient.invalidateQueries({ queryKey: ["chats"] });
       },
@@ -196,23 +187,18 @@ const ChatPage = () => {
     clientRef.current = client;
 
     return () => {
-      // Закрываем сокет при размонтировании/смене пользователя, иначе
-      // в Strict Mode и при повторных запусках эффекта копятся соединения.
       client.deactivate();
       if (clientRef.current === client) clientRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.username]);
 
   useEffect(() => {
-    // при смене чата сбрасываем таймер отправки STOP
     return () => {
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       isTypingRef.current = false;
     };
   }, [selectedChatId]);
 
-  // очистка таймеров автосброса при размонтировании
   useEffect(() => {
     return () => {
       Object.values(remoteTypingTimeoutsRef.current).forEach(clearTimeout);
@@ -238,9 +224,6 @@ const ChatPage = () => {
     prevChatIdRef.current = selectedChatId;
 
     if (chatChanged) {
-      // При переключении чата — мгновенно вниз, без анимации перемотки.
-      // requestAnimationFrame — чтобы дождаться отрисовки новых сообщений
-      // и получить корректный scrollHeight.
       requestAnimationFrame(() => {
         el.scrollTop = el.scrollHeight;
         isAtBottomRef.current = true;
@@ -248,7 +231,6 @@ const ChatPage = () => {
       return;
     }
 
-    // Новое сообщение в текущем чате — плавно, только если были внизу.
     if (isAtBottomRef.current) {
       el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
     }
@@ -260,13 +242,10 @@ const ChatPage = () => {
     const last = flatMessages[flatMessages.length - 1];
     if (!last) return;
 
-    // своё сообщение не отмечаем
     if (last.senderUsername === me.username) return;
 
-    // пользователь не внизу — не считается прочитанным
     if (!isAtBottomRef.current) return;
 
-    // уже отправляли этот id — не спамим
     if (last.id <= lastReadIdRef.current) return;
 
     lastReadIdRef.current = last.id;
@@ -316,9 +295,11 @@ const ChatPage = () => {
   };
 
   if (isLoadingMe) {
-    <div className={styles.error}>
-      <p className={styles.errorMessage}>Loading...</p>
-    </div>;
+    return (
+      <div className={styles.error}>
+        <p className={styles.errorMessage}>Loading...</p>
+      </div>
+    );
   }
 
   if (isErrorMe || !me) {
@@ -355,10 +336,7 @@ const ChatPage = () => {
     const date = new Date(isoString);
     if (isNaN(date.getTime())) return "";
 
-    // Получаем день, месяц и время
     const day = date.getDate();
-
-    // toLocaleString с 'en-US' даст "Nov", приводим к нижнему регистру
     const month = date
       .toLocaleString("en-US", { month: "short" })
       .toLowerCase();
@@ -417,7 +395,8 @@ const ChatPage = () => {
               </span>
               {typingStatusText ? (
                 <span className={styles.typingStatus}>{typingStatusText}</span>
-              ) : selectedChatTitle !== "Избранное" ? (
+              ) : selectedChatTitle !== "Избранное" &&
+                selectedChatId !== null ? (
                 <span className={styles.infoMessage}>
                   {`Last seen: ${formatMessageDate(handleLastSeenAt(chats ?? []) ?? "")}`}
                 </span>

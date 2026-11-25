@@ -1,4 +1,3 @@
-// /api/v1/me
 export type MeData = {
   username: string;
   displayName: string;
@@ -10,8 +9,6 @@ export type UserProfile = {
   displayName: string;
   lastSeenAt: string;
 };
-
-// /api/v1/chats
 
 export type Member = {
   username: string;
@@ -38,7 +35,6 @@ export type ChatDetails = {
   unreadCount: number;
 };
 
-// /api/v1/chats/{chatId}/messages
 export type Message = {
   id: number;
   chatId: number;
@@ -60,7 +56,5 @@ export type MessagesPage =
       number?: number;
     }
   | Message[];
-
-// /api/v1/users/search
 
 export type Search = Member[];

@@ -34,7 +34,6 @@ const ChatScroll = ({
 
   const createPrivateChat = useCreatePrivateChat();
 
-  // Debounce: обновляем поисковый запрос через 350 мс после последнего ввода
   useEffect(() => {
     const trimmed = inputValue.trim();
 
@@ -63,21 +62,14 @@ const ChatScroll = ({
   const handleStartChat = (username: string) => {
     createPrivateChat.mutate(username, {
       onSuccess: (createdChat) => {
-        handleClear(); // сбрасываем поиск и возвращаемся к списку чатов
+        handleClear();
         onSelectChat?.(createdChat.id, createdChat.title);
       },
     });
   };
 
-  // const handleLastSeen = (arr: Member[]) => {
-  //   if (arr.length === 2) {
-  //     return arr.find((member) => member.username !== me?.username)?.lastSeenAt;
-  //   }
-  // };
-
   const isSearchMode = inputValue.trim().length > 0;
 
-  // Исключаем текущего пользователя из результатов поиска
   const filteredUsers = searchResults?.filter(
     (user) => user.username !== me?.username,
   );
@@ -112,7 +104,6 @@ const ChatScroll = ({
       <Flipper flipKey={flipKey} spring="stiff">
         <section className={styles.userChats}>
           {isSearchMode ? (
-            /* РЕЖИМ ПОИСКА */
             <>
               {(isSearching || inputValue.trim() !== debouncedQuery) && (
                 <div className={styles.infoText}>Searching...</div>
@@ -136,14 +127,12 @@ const ChatScroll = ({
                     <Chat
                       name={user.displayName || user.username}
                       lastMessage={`@${user.displayName}`}
-                      // lastSeenAt={user.lastSeenAt}
                     />
                   </div>
                 </Flipped>
               ))}
             </>
           ) : (
-            /* ОБЫЧНЫЙ РЕЖИМ */
             <>
               {isLoadingChats && (
                 <div className={styles.infoText}>Загрузка чатов...</div>
@@ -166,7 +155,6 @@ const ChatScroll = ({
                       }
                       unreadCount={chat.unreadCount}
                       isActive={chat.id === selectedChatId}
-                      // lastSeenAt={handleLastSeen(chat.members) || "Group chat"}
                     />
                   </div>
                 </Flipped>

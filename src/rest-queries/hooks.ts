@@ -12,7 +12,6 @@ import type {
   MessagesPage,
 } from "@/rest-queries/types";
 
-// Браузер ходит на бэкенд напрямую и сам предъявляет ему сертификат
 const serverName =
   import.meta.env.VITE_SERVER_NAME &&
   import.meta.env.VITE_SERVER_NAME !== "localhost"
@@ -47,7 +46,7 @@ export const useMe = () => {
     queryFn: ({ signal }) => fetchApi<MeData>("/api/v1/users/me", { signal }),
     retry: false,
     staleTime: 0,
-    gcTime: 0, // не хранить в кэше после размонтирования
+    gcTime: 0,
     refetchOnMount: "always",
   });
 };
@@ -85,11 +84,9 @@ export const useMessages = (chatId: number | null) => {
       ),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
-      // Если бэкенд вернул просто массив Message[]
       if (Array.isArray(lastPage)) {
         return lastPage.length === 50 ? allPages.length : undefined;
       }
-      // Если бэкенд вернул объект пагинации Spring
       if (typeof lastPage.hasNext === "boolean") {
         return lastPage.hasNext ? allPages.length : undefined;
       }
